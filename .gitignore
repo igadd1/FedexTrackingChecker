@@ -1,4 +1,5 @@
 
+*.pyc
 test.txt
 FedexConfig.ini
 trackingImport.xlsx
