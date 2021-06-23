@@ -10,3 +10,4 @@ class TrackingInfo():
         self.actualDeliveryAddressState = parser.getActualDeliveryAddressState(self.response)
         self.deliveryAttempts = parser.getDeliveryAttempts(self.response)
         self.deliverySignature = parser.getDeliverySignature(self.response)
+        self.eventDescription = parser.getEventDescription(self.response)

@@ -74,3 +74,10 @@ class ResponseParser():
         except:
             res = "None"
         return res
+    
+    def getEventDescription(self, response):
+        try:
+            res = response['CompletedTrackDetails'][0]['TrackDetails'][0]['Events'][0]['EventDescription']
+        except:
+            res = "None"
+        return res

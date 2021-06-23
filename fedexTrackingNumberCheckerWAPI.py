@@ -6,6 +6,7 @@ import pandas as pd
 import os, sys
 import configparser
 import time
+import threading
 
 def importTrackingNumbers():
     importPath = os.path.join(sys.path[0], "trackingImport.xlsx")
@@ -18,18 +19,31 @@ def importTrackingNumbers():
         trackingNumbers.append(trackingNumber)
     return trackingNumbers
 
-def sendRequests(trackingNumbers, trackingRequester, list, parser):
-    checkedNumbers = 0
+def tmpFunc(trackingNumber, trackingRequester, list, parser, numbersChecked, debug=False):
+    print("Current tracking number being checked:", trackingNumber, "Checked", numbersChecked, "so far.")
+    trackingRequester.SelectionDetails.PackageIdentifier.Value = trackingNumber
+    trackingRequester.send_request()
+    list.append(TrackingInfo(trackingRequester.response, parser))
+    if debug:
+        tmp = trackingRequester.response
+        tmpfile = open('tmp.txt', 'w')
+        tmpfile.write(str(tmp))
+
+def sendRequests(trackingNumbers, trackingRequester, list, parser, debug=False):
+    numbersChecked = 0
     for trackingNumber in trackingNumbers:
-        checkedNumbers+=1
-        print("Current tracking number being checked:", trackingNumber, "Checked", checkedNumbers, "so far.")
-        trackingRequester.SelectionDetails.PackageIdentifier.Value = trackingNumber
-        trackingRequester.send_request()
-        list.append(TrackingInfo(trackingRequester.response, parser))
+        numbersChecked +=1
+        threading.Thread(target=tmpFunc, args=(trackingNumber, trackingRequester, list, parser, numbersChecked)).start()
+    #sleep until all threads are closed
+    while threading.active_count() > 1:
+        time.sleep(.1)
+
+
 
 def exportData(trackingObjects):
     keys = ['trackingNumber', 'packageWeight', 'sequenceNumber', 'shipperCity', 
-    'actualDeliveryAddressCity','actualDeliveryAddressState', 'deliveryAttempts', 'deliverySignature']
+    'actualDeliveryAddressCity','actualDeliveryAddressState', 'deliveryAttempts', 'deliverySignature',
+    'eventDescription']
     d = {}
     for key in keys:
         d[key] = []
@@ -43,7 +57,8 @@ def main():
     config = configparser.ConfigParser()
     config.read(os.path.join(sys.path[0], "FedexConfig.ini"))
     CONFIG_OBJ = FedexConfig(key=config['DEFAULT']['key'],password=config['DEFAULT']['password'],
-    account_number=config['DEFAULT']['account_number'],meter_number=config['DEFAULT']['meter_number'],use_test_server=False)
+    account_number=config['DEFAULT']['account_number'],meter_number=config['DEFAULT']['meter_number'],
+    use_test_server=False)
 
     trackingInfoObjects = []
     #delete old export
